@@ -128,67 +128,56 @@
     </div>
 
     <script>
-        const screenHome = document.getElementById('screen-home');
-        const screenCamera = document.getElementById('screen-camera');
-        const screenLoading = document.getElementById('screen-loading');
-        const screenViewer = document.getElementById('screen-viewer');
-        const video = document.getElementById('videoElement');
-        const recordBtn = document.getElementById('recordBtn');
+       let mediaRecorder;
+        let recordedChunks = [];
 
-        let stream;
-
-        // Переключение экранов
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-        }
-
-        // Запуск камеры
         async function startCamera() {
             try {
-                // Запрашиваем заднюю камеру смартфона
                 stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" }, 
+                    video: { facingMode: "environment", width: 1280, height: 720 }, 
                     audio: false 
                 });
                 video.srcObject = stream;
                 showScreen('screen-camera');
+                
+                // Подготавливаем запись
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
             } catch (err) {
-                alert("Нет доступа к камере. Разрешите доступ в настройках браузера.");
+                alert("Ошибка камеры: " + err);
             }
         }
 
-        // Имитация записи и отправки на сервер
         function simulateRecording() {
-            recordBtn.innerText = "Сканирование (Обойдите комнату)...";
-            recordBtn.style.background = "rgba(255, 0, 0, 0.6)";
-
-            // Ждем 5 секунд (типа записываем видео)
-            setTimeout(() => {
+            if (mediaRecorder.state === "inactive") {
+                mediaRecorder.start();
+                recordBtn.innerText = "СТОП (Нажми, когда закончишь)";
+                recordBtn.style.background = "red";
+            } else {
+                mediaRecorder.stop();
                 stopCamera();
-                showScreen('screen-loading');
-
-                // Имитируем ожидание ответа от сервера с готовой моделью (еще 3 секунды)
-                setTimeout(() => {
-                    showScreen('screen-viewer');
-                }, 3000);
-
-            }, 5000);
-        }
-
-        // Отключение камеры для экономии батареи
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+                processScan();
             }
-            recordBtn.innerText = "Начать сканирование";
-            recordBtn.style.background = "rgba(0, 0, 0, 0.5)";
         }
 
-        // Возврат на главный экран
-        function goHome() {
-            stopCamera();
-            showScreen('screen-home');
+        function processScan() {
+            showScreen('screen-loading');
+            
+            // Создаем видеофайл из записанных кусочков
+            const blob = new Blob(recordedChunks, { type: "video/mp4" });
+            const videoUrl = URL.createObjectURL(blob);
+
+            // ИМИТАЦИЯ ОТПРАВКИ НА LUMA AI
+            console.log("Видео готово к отправке на сервер:", videoUrl);
+
+            setTimeout(() => {
+                // Здесь в будущем будет ссылка на твою реальную модель от Luma AI
+                showScreen('screen-viewer');
+                alert("Видео записано! Теперь его нужно отправить в Luma AI для генерации 3D.");
+            }, 3000);
         }
     </script>
 </body>
