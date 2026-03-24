@@ -1,11 +1,11 @@
 {
-  "short_name": "3DScan",
-  "name": "3D Scanner Web App",
+  "short_name": "Scanner3D",
+  "name": "3D Scanner Web Pro",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3241/3241324.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ],
   "start_url": ".",
