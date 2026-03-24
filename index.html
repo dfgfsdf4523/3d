@@ -3,181 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Scanner Web</title>
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <title>3D Scanner Pro</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         :root {
-            --bg-color: #121212;
-            --accent: #2979ff;
-            --text: #ffffff;
+            --bg: #0a0a0a;
+            --accent: #007aff;
+            --danger: #ff3b30;
+            --glass: rgba(255, 255, 255, 0.1);
         }
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden; /* Запрещаем скролл */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            margin: 0; padding: 0;
+            background: var(--bg);
+            color: white;
+            font-family: -apple-system, system-ui, sans-serif;
             height: 100vh;
+            overflow: hidden;
+            display: flex; flex-direction: column;
         }
 
         /* Экраны */
         .screen {
-            display: none;
-            width: 100%;
-            height: 100%;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 0; left: 0;
+            display: none; width: 100%; height: 100%;
+            flex-direction: column; align-items: center; justify-content: center;
         }
         .active { display: flex; }
 
-        /* Дизайн главной кнопки с эффектом свечения */
-        .btn-add {
-            width: 90px;
-            height: 90px;
-            background: linear-gradient(135deg, #2979ff, #00e5ff);
-            border-radius: 50%;
-            border: none;
-            color: white;
-            font-size: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 30px rgba(41, 121, 255, 0.5);
-            cursor: pointer;
-            transition: transform 0.2s;
+        /* Главная кнопка + */
+        .btn-main {
+            width: 100px; height: 100px;
+            background: linear-gradient(135deg, var(--accent), #5856d6);
+            border-radius: 50%; border: none;
+            color: white; font-size: 60px; font-weight: 200;
+            box-shadow: 0 10px 40px rgba(0, 122, 255, 0.4);
+            cursor: pointer; transition: 0.3s;
         }
-        .btn-add:active { transform: scale(0.9); }
+        .btn-main:active { transform: scale(0.9); }
 
-        h1 { font-weight: 600; font-size: 24px; margin-bottom: 40px; }
-
-        /* Экран камеры */
+        /* Камера и интерфейс записи */
         #videoElement {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            position: absolute;
-            z-index: 1;
+            width: 100%; height: 100%; object-fit: cover;
+            position: absolute; top: 0; left: 0; z-index: 1;
         }
-        .ui-overlay {
-            position: absolute;
-            bottom: 40px;
-            z-index: 2;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-            padding: 15px 30px;
-            border-radius: 30px;
-            font-size: 18px;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .overlay {
+            position: absolute; bottom: 50px; z-index: 10;
+            width: 100%; display: flex; justify-content: center;
+        }
+        .btn-record {
+            padding: 20px 40px; border-radius: 40px;
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(15px); color: white;
+            font-size: 18px; font-weight: 600; text-transform: uppercase;
         }
 
-        /* 3D Вьювер */
-        model-viewer {
-            width: 100%;
-            height: 100%;
-            background-color: #1a1a1a;
+        /* Индикатор записи */
+        .recording-dot {
+            width: 12px; height: 12px; background: var(--danger);
+            border-radius: 50%; display: inline-block; margin-right: 10px;
+            animation: pulse 1s infinite;
         }
-        
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
+        @keyframes pulse {
+            0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; }
         }
+
+        h1 { font-size: 22px; font-weight: 300; letter-spacing: 1px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div id="screen-home" class="screen active">
-        <h1>Мои 3D Комнаты</h1>
-        <button class="btn-add" onclick="startCamera()">+</button>
+        <h1>3D SCANNER</h1>
+        <div style="flex-grow: 1; display: flex; align-items: center;">
+            <button class="btn-main" onclick="startCamera()">+</button>
+        </div>
+        <p style="color: #666; margin-bottom: 40px;">Нажми +, чтобы начать съемку</p>
     </div>
 
     <div id="screen-camera" class="screen">
-        <video id="videoElement" autoplay playsinline></video>
-        <div class="ui-overlay" id="recordBtn" onclick="simulateRecording()">Начать сканирование</div>
-    </div>
-
-    <div id="screen-loading" class="screen">
-        <h2>Обработка данных...</h2>
-        <p style="color: #888;">Создаем 3D модель (это займет пару секунд)</p>
-    </div>
-
-    <div id="screen-viewer" class="screen">
-        <button class="close-btn" onclick="goHome()">Закрыть</button>
-        <model-viewer 
-            src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-            camera-controls 
-            auto-rotate 
-            ar>
-        </model-viewer>
+        <video id="videoElement" autoplay playsinline muted></video>
+        <div class="overlay">
+            <button class="btn-record" id="recordBtn" onclick="toggleRecording()">Начать запись</button>
+        </div>
     </div>
 
     <script>
-       let mediaRecorder;
+        let mediaRecorder;
         let recordedChunks = [];
+        let stream;
 
+        const home = document.getElementById('screen-home');
+        const camView = document.getElementById('screen-camera');
+        const video = document.getElementById('videoElement');
+        const recordBtn = document.getElementById('recordBtn');
+
+        // Запуск камеры
         async function startCamera() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment", width: 1280, height: 720 }, 
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }, 
                     audio: false 
                 });
                 video.srcObject = stream;
-                showScreen('screen-camera');
+                home.classList.remove('active');
+                camView.classList.add('active');
                 
-                // Подготавливаем запись
+                // Настройка записи
                 recordedChunks = [];
-                mediaRecorder = new MediaRecorder(stream);
+                let options = { mimeType: 'video/webm; codecs=vp9' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/mp4' };
+                }
+                mediaRecorder = new MediaRecorder(stream, options);
+
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) recordedChunks.push(e.data);
                 };
+
+                mediaRecorder.onstop = exportVideo;
+
             } catch (err) {
                 alert("Ошибка камеры: " + err);
             }
         }
 
-        function simulateRecording() {
+        // Старт/Стоп записи
+        function toggleRecording() {
             if (mediaRecorder.state === "inactive") {
                 mediaRecorder.start();
-                recordBtn.innerText = "СТОП (Нажми, когда закончишь)";
-                recordBtn.style.background = "red";
+                recordBtn.innerHTML = '<span class="recording-dot"></span> Идет запись...';
+                recordBtn.style.borderColor = "var(--danger)";
             } else {
                 mediaRecorder.stop();
                 stopCamera();
-                processScan();
             }
         }
 
-        function processScan() {
-            showScreen('screen-loading');
-            
-            // Создаем видеофайл из записанных кусочков
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        // Скачивание видео
+        function exportVideo() {
             const blob = new Blob(recordedChunks, { type: "video/mp4" });
-            const videoUrl = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `3D_SCAN_${Date.now()}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
 
-            // ИМИТАЦИЯ ОТПРАВКИ НА LUMA AI
-            console.log("Видео готово к отправке на сервер:", videoUrl);
-
-            setTimeout(() => {
-                // Здесь в будущем будет ссылка на твою реальную модель от Luma AI
-                showScreen('screen-viewer');
-                alert("Видео записано! Теперь его нужно отправить в Luma AI для генерации 3D.");
-            }, 3000);
+            alert("Запись сохранена! Теперь загрузи это видео в Polycam или Luma AI для создания 3D модели.");
+            location.reload(); // Возвращаем на главный экран
         }
     </script>
 </body>
